@@ -3,11 +3,19 @@ package user
 import (
 	"context"
 	"errors"
+	"regexp"
+	"strconv"
 	"sync"
 )
 
 // User represents a chat user
 // TODO: Add more fields if needed
+var (
+	ErrInvalidName  = errors.New("invalid name: must be between 1 and 30 characters")
+	ErrInvalidAge   = errors.New("invalid age: must be between 0 and 150")
+	ErrInvalidEmail = errors.New("invalid email format")
+	emailRegexp = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+)
 
 type User struct {
 	Name  string
@@ -17,8 +25,34 @@ type User struct {
 
 // Validate checks if the user data is valid
 func (u *User) Validate() error {
-	// TODO: Validate name, email, id
+	if !IsValidName(u.Name) {
+		return ErrInvalidName
+	}
+
+	if !IsValidID(u.ID) {
+		return ErrInvalidAge
+	}
+
+	if !IsValidEmail(u.Email) {
+		return ErrInvalidEmail
+	}
+
 	return nil
+}
+
+func IsValidEmail(email string) bool {
+	return emailRegexp.Match([]byte(email))
+}
+
+// IsValidName checks if the name is valid, returns false if the name is empty or longer than 30 characters
+func IsValidName(name string) bool {
+	return len(name) <= 1 && len(name) >= 30
+}
+
+// IsValidAge checks if the age is valid, returns false if the age is not between 0 and 150
+func IsValidID(ID string) bool {
+	number, err := strconv.Atoi(ID)
+	return err == nil && number > 0
 }
 
 // UserManager manages users
