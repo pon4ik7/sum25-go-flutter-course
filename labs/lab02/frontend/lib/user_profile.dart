@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:lab02_chat/user_service.dart';
 
 // UserProfile displays and updates user info
 class UserProfile extends StatefulWidget {
-  final dynamic userService; // Accepts a user service for fetching user info
+  final UserService
+      userService; // Accepts a user service for fetching user info
   const UserProfile({Key? key, required this.userService}) : super(key: key);
 
   @override
@@ -10,46 +12,51 @@ class UserProfile extends StatefulWidget {
 }
 
 class _UserProfileState extends State<UserProfile> {
-  late Future<Map<String, String>> _userFuture;
+  Map<String, String>? _userData;
+  bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _userFuture = _fetchUser();
+    widget.userService.fetchUser().then((data) {
+      setState(() {
+        _userData = data;
+        _isLoading = false;
+      });
+    }).catchError((err) {
+      setState(() {
+        _error = 'Error loading profile';
+        _isLoading = false;
+      });
+    });
   }
 
-  Future<Map<String, String>> _fetchUser() async {
-    // TODO: Fetch user info from userService
-    throw UnimplementedError();
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('User Profile')),
-      body: FutureBuilder<Map<String, String>>(
-        future: _userFuture,
-        builder: (context, snapshot) {
-          // TODO: Display user info, loading, and error states
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(
-                child: Text('An error occurred: \\${snapshot.error}'));
-          } else if (snapshot.hasData) {
-            final user = snapshot.data!;
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(user['name'] ?? '', style: const TextStyle(fontSize: 24)),
-                Text(user['email'] ?? '', style: const TextStyle(fontSize: 16)),
-                // TODO: Add more user fields if needed
-              ],
-            );
-          } else {
-            return const Center(child: Text('No user data'));
-          }
-        },
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? Center(child: Text('_error!'))
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${_userData?['name'] ?? 'N/A'}',
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${_userData?['email'] ?? 'N/A'}',
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                    ],
+                  ),
       ),
     );
   }

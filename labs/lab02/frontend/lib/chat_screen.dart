@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'chat_service.dart';
+import 'dart:async';
 
-// ChatScreen displays the chat UI
 class ChatScreen extends StatefulWidget {
   final ChatService chatService;
-  const ChatScreen({Key? key, required this.chatService}) : super(key: key);
+  const ChatScreen({super.key, required this.chatService});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -12,23 +12,62 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
-  // TODO: Add loading/error state if needed
+  final List<String> _messages = []; // simple list for this example
+  late StreamSubscription<String> _subscription;
+  bool _isLoading = false;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    // TODO: Connect to chat service
+
+    widget.chatService.connect().catchError((err) {
+      setState(() {
+        _error = 'Connection error';
+      });
+    });
+
+    _subscription = widget.chatService.messageStream.listen(
+      (message) {
+        setState(() {
+          _messages.add(message);
+        });
+      },
+      onError: (err) {
+        setState(() {
+          _error = 'Connection error';
+        });
+      },
+    );
   }
 
   @override
   void dispose() {
     _controller.dispose();
-    // TODO: Dispose chat service if needed
+    _subscription.cancel();
     super.dispose();
   }
 
-  void _sendMessage() {
-    // TODO: Send message using chatService
+  void _sendMessage() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await widget.chatService.sendMessage(text);
+      _controller.clear();
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -37,34 +76,54 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: AppBar(title: const Text('Chat')),
       body: Column(
         children: [
+          if (_error != null)
+            Container(
+              color: Colors.red,
+              padding: const EdgeInsets.all(8),
+              width: double.infinity,
+              child: Text('Connection error: ${_error!}'),
+            ),
           Expanded(
-            child: StreamBuilder<String>(
-              stream: widget.chatService.messageStream,
-              builder: (context, snapshot) {
-                // TODO: Display messages, loading, and error states
-                return ListView(
-                  children: [
-                    // TODO: Build message widgets from snapshot.data
-                  ],
-                );
-              },
+            child: ListView.builder(
+              padding: const EdgeInsets.all(8),
+              itemCount: _messages.length,
+              itemBuilder: (context, index) => Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(_messages[index]),
+                ),
+              ),
             ),
           ),
+          const Divider(height: 1),
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    decoration:
-                        const InputDecoration(hintText: 'Type a message'),
+                    onSubmitted: (_) => _sendMessage(),
+                    decoration: const InputDecoration(
+                      hintText: 'Type a message...',
+                    ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: _sendMessage,
-                ),
+                _isLoading
+                    ? const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : IconButton(
+                        icon: const Icon(Icons.send),
+                        onPressed: _sendMessage,
+                      ),
               ],
             ),
           ),
