@@ -9,39 +9,51 @@ import (
 
 // Handler holds the storage instance
 type Handler struct {
-	// TODO: Add storage field of type *storage.MemoryStorage
+	Storage storage.MemoryStorage
 }
 
 // NewHandler creates a new handler instance
 func NewHandler(storage *storage.MemoryStorage) *Handler {
-	// TODO: Return a new Handler instance with provided storage
-	return nil
+	return &Handler{
+		Storage: *storage,
+	}
 }
 
 // SetupRoutes configures all API routes
 func (h *Handler) SetupRoutes() *mux.Router {
-	// TODO: Create a new mux router
-	// TODO: Add CORS middleware
-	// TODO: Create API v1 subrouter with prefix "/api"
-	// TODO: Add the following routes:
-	// GET /messages -> h.GetMessages
-	// POST /messages -> h.CreateMessage
-	// PUT /messages/{id} -> h.UpdateMessage
-	// DELETE /messages/{id} -> h.DeleteMessage
-	// GET /status/{code} -> h.GetHTTPStatus
-	// GET /health -> h.HealthCheck
-	// TODO: Return the router
-	return nil
+	r := mux.NewRouter()
+	r.Use(corsMiddleware)
+
+	apiRouter := r.PathPrefix("/api").Subrouter()
+	apiRouter.HandleFunc("/messages", h.GetMessages).Methods("GET")
+	apiRouter.HandleFunc("/messages", h.CreateMessage).Methods("POST")
+	apiRouter.HandleFunc("/messages/{id}", h.UpdateMessage).Methods("PUT")
+	apiRouter.HandleFunc("/messages/{id}", h.DeleteMessage).Methods("DELETE")
+	apiRouter.HandleFunc("/status/{code}", h.GetHTTPStatus).Methods("GET")
+	apiRouter.HandleFunc("/health", h.HealthCheck).Methods("GET")
+
+	return r
 }
 
 // GetMessages handles GET /api/messages
 func (h *Handler) GetMessages(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement GetMessages handler
-	// Get all messages from storage
-	// Create successful API response
-	// Write JSON response with status 200
-	// Handle any errors appropriately
+	messages := h.Storage.GetAll()
+
+	// Создаём ответ
+	response := map[string]interface{}{
+		"success":  true,
+		"messages": messages,
+	}
+
+	h.writeJSON(w, http.StatusOK, response)
 }
+
+// var msg models.Message
+// err := json.NewDecoder(r.Body).Decode(&msg)
+// if err != nil {
+// 	h.writeError(w, http.StatusBadRequest, "Invalid JSON")
+// 	return
+// }
 
 // CreateMessage handles POST /api/messages
 func (h *Handler) CreateMessage(w http.ResponseWriter, r *http.Request) {

@@ -1,22 +1,24 @@
 package models
 
+import "time"
+
 // Message represents a chat message
 type Message struct {
-	// TODO: Add ID field of type int with json tag "id"
-	// TODO: Add Username field of type string with json tag "username"
-	// TODO: Add Content field of type string with json tag "content"
-	// TODO: Add Timestamp field of type time.Time with json tag "timestamp"
+	ID        int       `json:"id"`
+	Username  string    `json:"username"`
+	Content   string    `json:"content"`
+	Timestamp time.Time `json:"timestamp"`
 }
 
 // CreateMessageRequest represents the request to create a new message
 type CreateMessageRequest struct {
-	// TODO: Add Username field of type string with json tag "username" and validation tag "required"
-	// TODO: Add Content field of type string with json tag "content" and validation tag "required"
+	Username string `json:"username" validate:"required"`
+    Content  string `json:"content" validate:"required"`
 }
 
 // UpdateMessageRequest represents the request to update a message
 type UpdateMessageRequest struct {
-	// TODO: Add Content field of type string with json tag "content" and validation tag "required"
+	Content  string `json:"content" validate:"required"`
 }
 
 // HTTPStatusResponse represents the response for HTTP status code endpoint
