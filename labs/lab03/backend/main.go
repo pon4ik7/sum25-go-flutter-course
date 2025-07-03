@@ -13,7 +13,7 @@ func main() {
 	storage := storage.NewMemoryStorage()
 
 	handler := api.NewHandler(storage)
-	
+
 	router := handler.SetupRoutes()
 
 	srv := &http.Server{
@@ -26,7 +26,7 @@ func main() {
 
 	log.Println("TODO: Implement main function")
 
-	if err := srv.ListenAndServe(); err != nil{
+	if err := srv.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
 }
